@@ -61,7 +61,5 @@ public class TimeAllotted : MonoBehaviour
 
             finalTime.text = TimeAlloted.ToString("F2") + " Seconds";
         }
-
-        Debug.Log(TimeAlloted);
     }
 }
