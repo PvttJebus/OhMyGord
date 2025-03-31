@@ -1,65 +1,69 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
-public class Mover : MonoBehaviour
+[RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
+public class Mover : Interactable
 {
-    Rigidbody2D body;
-    Collider2D collider;
-    public float moveSpeed = 15000;
-    public float moveSpeedReturn = 5000;
-    public float maxSpeed = 70000;
-    public  bool returnToStart = true;
-    float closeEnough = 0.1f;
-    bool moving = false;
-    Vector2 startPosition;
+    private Rigidbody2D body;
+    private Vector2 startPosition;
+    private bool moving;
+
+    [Header("Movement Settings")]
+    public float moveSpeed = 15000f;
+    public float moveSpeedReturn = 5000f;
+    public float maxSpeed = 70000f;
+    public bool returnToStart = true;
+    [SerializeField] private float closeEnough = 0.1f;
+
+    [Header("Audio")]
     public AudioSource moverAudio;
 
-    void Start()
+    private void Start()
     {
         body = GetComponent<Rigidbody2D>();
-        collider = GetComponent<Collider2D>();
         startPosition = body.position;
     }
 
-    void FixedUpdate()
+    public override void OnToggle()
     {
-        if (Input.GetMouseButton((int)MouseButton.Left))
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics2D.Raycast(ray.origin, ray.direction, 100).collider == collider)
-            {
-                moving = true;
-                if (!moverAudio.isPlaying) 
-                {
-                    moverAudio.Play();                
-                }
+        moving = true;
+        moverAudio.Play();
+    }
 
-            }
-
-            
-        }
-        else moving = false;
-
+    private void Update()
+    {
         if (moving)
         {
-            if (body.velocity.magnitude < maxSpeed)
+            if (Input.GetMouseButtonUp(0))
             {
-                var mouseToPlatform = (Vector2)(Camera.main.ScreenToWorldPoint(Input.mousePosition) - transform.position);
-                body.AddRelativeForce(mouseToPlatform.normalized * moveSpeed);
+                moving = false;
+                moverAudio.Stop();
             }
         }
-        else if (returnToStart && (startPosition - body.position).magnitude > closeEnough)
-        { 
-                body.AddForce((startPosition - body.position).normalized * moveSpeedReturn);
-                moverAudio.Stop();
-        }
-        else
-        {
-            body.velocity *= 0.9f;
-            
-        }
+    }
 
+    private void FixedUpdate()
+    {
+        if (moving)
+        {
+            ApplyMovementForce();
+        }
+        else if (returnToStart) ReturnToStart();
+
+        body.velocity *= 0.9f;
+    }
+
+    private void ApplyMovementForce()
+    {
+        if (body.velocity.magnitude >= maxSpeed) return;
+
+        Vector2 mousePosition = (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 direction = (mousePosition - body.position).normalized;
+        body.AddForce(direction * moveSpeed);
+    }
+
+    private void ReturnToStart()
+    {
+        if ((startPosition - body.position).magnitude > closeEnough)
+            body.AddForce((startPosition - body.position).normalized * moveSpeedReturn);
     }
 }

@@ -15,7 +15,7 @@ public class Door : Interactable
         UpdateDoorState();
     }
 
-    public override void Toggle()
+    public override void OnToggle()
     {
         isOpen = !isOpen;
         UpdateDoorState();
@@ -30,10 +30,5 @@ public class Door : Interactable
             doorRenderer.color.b,
             isOpen ? 0.5f : 1f
         );
-    }
-
-    private void OnMouseDown()
-    {
-        if (group != null) group.ActivateAll();
     }
 }

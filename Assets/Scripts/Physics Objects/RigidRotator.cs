@@ -1,10 +1,9 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
-public class RigidRotator : MonoBehaviour
+public class RigidRotator : Interactable
 {
     private Rigidbody2D _body;
-    private Collider2D _platformCollider;
     private Camera _mainCamera;
     private bool _rotating;
     private float _rotationStart;
@@ -20,25 +19,27 @@ public class RigidRotator : MonoBehaviour
     [Header("Audio")]
     public AudioSource rotationAudio;
 
-    private void Awake()
+    private void Start()
     {
         _body = GetComponent<Rigidbody2D>();
-        _platformCollider = GetComponent<Collider2D>();
         _mainCamera = Camera.main;
-        _body.angularDrag = 1f; // Add damping to prevent overshooting
+        _body.angularDrag = 1f;
+        SnapToNearestAngle();
     }
 
-    private void Start() => SnapToNearestAngle();
-
-    private void Update()
+    public override void OnToggle()
     {
-        if (Input.GetMouseButtonDown(0))
+        _rotating = !_rotating;
+        _rotationStart = GetCurrentRotation();
+
+        if (_rotating)
         {
-            Vector2 mousePos = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
-            if (_platformCollider.OverlapPoint(mousePos))
-            {
-                ToggleRotationState();
-            }
+            rotationAudio.Play();
+        }
+        else
+        {
+            rotationAudio.Stop();
+            SnapToNearestAngle();
         }
     }
 
@@ -56,36 +57,18 @@ public class RigidRotator : MonoBehaviour
         ClampAngularVelocity();
     }
 
-    private void ToggleRotationState()
-    {
-        _rotating = !_rotating;
-        _rotationStart = GetCurrentRotation();
-
-        if (_rotating)
-        {
-            rotationAudio.Play();
-        }
-        else
-        {
-            rotationAudio.Stop();
-            SnapToNearestAngle();
-        }
-    }
-
     private void HandleActiveRotation()
     {
         float currentRotation = GetCurrentRotation();
         float rotationDelta = Mathf.DeltaAngle(_rotationStart, currentRotation);
 
-        // Apply smooth torque with automatic direction handling
         float torque = _rotationSpeed * Mathf.Sign(90 - rotationDelta);
         _body.AddTorque(_reversed ? -torque : torque);
 
-        // Check for snap condition using angular distance
         if (Mathf.Abs(rotationDelta) >= 90 - _snapThreshold)
         {
             SnapToNearestAngle();
-            ToggleRotationState();
+            Toggle();
         }
     }
 
@@ -101,7 +84,6 @@ public class RigidRotator : MonoBehaviour
         }
         else
         {
-            // Smooth return using velocity damping
             _body.angularVelocity = Mathf.SmoothDamp(
                 _body.angularVelocity,
                 0f,
@@ -110,7 +92,6 @@ public class RigidRotator : MonoBehaviour
                 _returnSpeed
             );
 
-            // Apply corrective torque
             float torque = angleDifference * _returnSpeed * 0.01f;
             _body.AddTorque(_reversed ? -torque : torque);
         }
