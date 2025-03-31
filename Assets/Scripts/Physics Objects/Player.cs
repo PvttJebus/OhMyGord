@@ -34,8 +34,22 @@ public class Player : MonoBehaviour
         body.velocity = new Vector2(body.velocity.x * decay, body.velocity.y);
 
         // Movement input handling
-        body.AddForce(Vector2.right * Input.GetAxis("Horizontal") * maxSpeed.x * speedRatio);
-        body.AddForce(Vector2.up * Input.GetAxis("Vertical") * maxSpeed.y * speedRatio);
+        Vector2 horizontalInput = Vector2.right * Input.GetAxis("Horizontal");
+        Vector2 runForce = Vector2.zero;
+
+        if (Math.Sign(runForce.x) == -Math.Sign(body.velocity.x))
+        {
+            runForce = Vector2.right * Input.GetAxis("Horizontal") * maxSpeed.x * stopSpeedRatio;
+        }
+        else
+        {
+            runForce = Vector2.right * Input.GetAxis("Horizontal") * maxSpeed.x * speedRatio;
+        }
+
+            body.AddForce(runForce);
+
+        Vector2 verticalBiasForce = Vector2.up * Input.GetAxis("Vertical") * maxSpeed.y * speedRatio;
+        body.AddForce(verticalBiasForce);
 
         bool isGrounded = grounded();
 
@@ -76,8 +90,15 @@ public class Player : MonoBehaviour
         }
 
         spriteRenderer.transform.rotation = Quaternion.identity;
-
     }
+    
+
+    // PREVENTS ALL SPRITE ROTATION
+    //private void LateUpdate()
+    //{
+    //    spriteRenderer.transform.rotation = Quaternion.identity;
+    //}
+
     bool grounded()
     {
         var hit = Physics2D.Raycast(body.position + Vector2.down * 0.61f, Vector2.down, 0.001f);

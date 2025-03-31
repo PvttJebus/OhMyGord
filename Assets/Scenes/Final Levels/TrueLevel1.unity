@@ -34715,6 +34715,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Main Camera (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 3621843211583426502, guid: 0e2c5c05b854d6241b438b3dbab8a0f2, type: 3}
+      propertyPath: orthographic
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4984000055668175417, guid: 0e2c5c05b854d6241b438b3dbab8a0f2, type: 3}
       propertyPath: maxZoom
       value: 7.5
