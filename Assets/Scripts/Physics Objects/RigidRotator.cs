@@ -39,7 +39,6 @@ public class RigidRotator : Interactable
         else
         {
             rotationAudio.Stop();
-            SnapToNearestAngle();
         }
     }
 
@@ -84,15 +83,7 @@ public class RigidRotator : Interactable
         }
         else
         {
-            _body.angularVelocity = Mathf.SmoothDamp(
-                _body.angularVelocity,
-                0f,
-                ref _angularVelocity,
-                0.1f,
-                _returnSpeed
-            );
-
-            float torque = angleDifference * _returnSpeed * 0.01f;
+            float torque = angleDifference * _returnSpeed;
             _body.AddTorque(_reversed ? -torque : torque);
         }
     }
