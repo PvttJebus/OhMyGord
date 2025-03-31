@@ -1,63 +1,50 @@
 using UnityEngine;
 
-public class RigidRotator : MonoBehaviour
+[RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
+public class RigidRotator : Interactable
 {
-    Rigidbody2D body;
-    Collider2D platformCollider;
-    bool rotating = false;
-    float rotation;
-    float rotationStart;
+    private Rigidbody2D _body;
+    private Camera _mainCamera;
+    private bool _rotating;
+    private float _rotationStart;
+    private float _angularVelocity;
 
-    float rotationLength = 70;
-    public float rotationSpeed = 9000;
-    public float maxSpeed = 10000;
-    public float returnSpeed = 7000;
-    public bool reversed = false;
-    float closeEnough = 0.9f;
+    [Header("Rotation Settings")]
+    [SerializeField] private float _rotationSpeed = 9000f;
+    [SerializeField] private float _maxSpeed = 10000f;
+    [SerializeField] private float _returnSpeed = 7000f;
+    [SerializeField] private bool _reversed = false;
+    [SerializeField][Range(0.1f, 1.5f)] private float _snapThreshold = 0.9f;
+
+    [Header("Audio")]
     public AudioSource rotationAudio;
 
-    void Start()
+    private void Start()
     {
-        body = GetComponent<Rigidbody2D>();
-        platformCollider = GetComponent<Collider2D>();
+        _body = GetComponent<Rigidbody2D>();
+        _mainCamera = Camera.main;
+        _body.angularDrag = 1f;
         SnapToNearestAngle();
     }
 
-    void FixedUpdate()
+    public override void OnToggle()
     {
-        HandleRotationInput();
-        UpdateRotationState();
-        ClampAngularVelocity();
-    }
+        _rotating = !_rotating;
+        _rotationStart = GetCurrentRotation();
 
-    void HandleRotationInput()
-    {
-        if (Input.GetMouseButtonDown(0))
+        if (_rotating)
         {
-            Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            if (platformCollider.OverlapPoint(mousePos))
-            {
-                if (rotating)
-                {
-                    rotating = false;
-                    rotationAudio.Stop();
-                }
-                else
-                {
-                    rotating = true;
-                    rotationStart = GetCurrentRotation();
-                    if (rotationStart >= 270) rotationStart -= 360;
-                    rotationAudio.Play();
-                }
-            }
+            rotationAudio.Play();
+        }
+        else
+        {
+            rotationAudio.Stop();
         }
     }
 
-    void UpdateRotationState()
+    private void FixedUpdate()
     {
-        rotation = GetCurrentRotation();
-
-        if (rotating)
+        if (_rotating)
         {
             HandleActiveRotation();
         }
@@ -65,100 +52,59 @@ public class RigidRotator : MonoBehaviour
         {
             HandleReturnRotation();
         }
+
+        ClampAngularVelocity();
     }
 
-    float GetCurrentRotation()
+    private void HandleActiveRotation()
     {
-        if (reversed)
-        {
-            return (360 - body.rotation) % 360;
-        }
-        else
-        {
-            return body.rotation % 360;
-        }
-    }
+        float currentRotation = GetCurrentRotation();
+        float rotationDelta = Mathf.DeltaAngle(_rotationStart, currentRotation);
 
-    void HandleActiveRotation()
-    {
-        float rotationDistance = Mathf.Abs(rotation - rotationStart);
+        float torque = _rotationSpeed * Mathf.Sign(90 - rotationDelta);
+        _body.AddTorque(_reversed ? -torque : torque);
 
-        if (rotationDistance < rotationLength || rotationDistance > 270)
-        {
-            if (reversed)
-            {
-                body.AddTorque(-rotationSpeed);
-            }
-            else
-            {
-                body.AddTorque(rotationSpeed);
-            }
-        }
-
-        if (rotationDistance >= 90 - closeEnough && rotationDistance <= 270)
+        if (Mathf.Abs(rotationDelta) >= 90 - _snapThreshold)
         {
             SnapToNearestAngle();
-            rotating = false;
+            Toggle();
         }
     }
 
-    void HandleReturnRotation()
+    private void HandleReturnRotation()
     {
         float targetAngle = GetClosestRightAngle();
         float currentAngle = GetCurrentRotation();
-        float difference = Mathf.DeltaAngle(currentAngle, targetAngle);
+        float angleDifference = Mathf.DeltaAngle(currentAngle, targetAngle);
 
-        if (Mathf.Abs(difference) < closeEnough)
+        if (Mathf.Abs(angleDifference) <= _snapThreshold)
         {
             SnapToNearestAngle();
         }
         else
         {
-            if (reversed)
-            {
-                body.AddTorque(Mathf.Sign(difference) * returnSpeed * -1);
-            }
-            else
-            {
-                body.AddTorque(Mathf.Sign(difference) * returnSpeed);
-            }
+            float torque = angleDifference * _returnSpeed;
+            _body.AddTorque(_reversed ? -torque : torque);
         }
-
-        body.angularVelocity *= difference / 90;
     }
 
-    void SnapToNearestAngle()
+    private float GetCurrentRotation() =>
+        _reversed ? (360 - _body.rotation) % 360 : _body.rotation % 360;
+
+    private void SnapToNearestAngle()
     {
-        body.rotation = GetClosestRightAngle();
-        body.angularVelocity = 0;
+        _body.MoveRotation(GetClosestRightAngle());
+        _body.angularVelocity = 0f;
     }
 
-    void ClampAngularVelocity()
+    private void ClampAngularVelocity() =>
+        _body.angularVelocity = Mathf.Clamp(_body.angularVelocity, -_maxSpeed, _maxSpeed);
+
+    private float GetClosestRightAngle()
     {
-        body.angularVelocity = Mathf.Clamp(
-            body.angularVelocity,
-            -maxSpeed,
-            maxSpeed
-        );
-    }
-
-    float GetClosestRightAngle()
-    {
-        float currentRotation = body.rotation % 360;
-
-        if (reversed)
-        {
-            float reversedRotation = (360 - currentRotation) % 360;
-
-            if (reversedRotation < 45 || reversedRotation >= 315) return 360;
-            if (reversedRotation < 135) return 270;
-            if (reversedRotation < 225) return 180;
-            return 90;
-        }
-
-        if (currentRotation < 45 || currentRotation >= 315) return 0;
-        if (currentRotation < 135) return 90;
-        if (currentRotation < 225) return 180;
-        return 270;
+        float current = GetCurrentRotation();
+        float normalized = Mathf.Repeat(current, 360f);
+        float rounded = Mathf.Round(normalized / 90f) * 90f;
+        return Mathf.Repeat(rounded, 360f);
     }
 }

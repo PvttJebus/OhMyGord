@@ -1,38 +1,61 @@
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    public float levelDuration = 0f; // Default level time in seconds
-    public TMP_Text timerText; // UI connection
+    [Header("Timer Settings")]
+    public float levelDuration = 0f;
+    public TMP_Text timerText;
 
+    [Header("Game State")]
     public float currentTime;
     public bool isTimerRunning;
-    public TimeAllotted TA;
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            //DontDestroyOnLoad(gameObject);
+            DontDestroyOnLoad(gameObject);
             SceneManager.sceneLoaded += OnSceneLoaded;
-            timerText = GameObject.Find("Timer").GetComponent<TextMeshProUGUI>();
         }
         else
         {
             Destroy(gameObject);
         }
     }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Only run timer in level scenes (assuming main menu is index 0)
-        if (scene.buildIndex > -1)
+        InitializeTimerUI();
+        ManageTimerState(scene);
+    }
+
+    private void InitializeTimerUI()
+    {
+        GameObject timerObject = GameObject.Find("Timer");
+        if (timerObject != null)
+        {
+            timerText = timerObject.GetComponent<TMP_Text>();
+            if (timerText == null)
+            {
+                Debug.LogWarning("Timer object missing TMP_Text component");
+            }
+        }
+    }
+
+    private void ManageTimerState(Scene scene)
+    {
+        bool isLevelScene = scene.buildIndex > 0; // Assuming main menu is index 0
+        if (isLevelScene)
         {
             StartTimer();
         }
@@ -42,31 +65,32 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
-        TA = FindAnyObjectByType<TimeAllotted>().GetComponent<TimeAllotted>();
-        if (isTimerRunning)
+        UpdateTimer();
+        HandleDebugInput();
+    }
+
+    private void UpdateTimer()
+    {
+        if (!isTimerRunning) return;
+
+        currentTime += Time.deltaTime;
+
+        if (timerText != null)
         {
-            currentTime += Time.deltaTime;
-
-            // Update UI if available
-            if (timerText != null)
-            {
-                timerText.text = $"Time: {Mathf.CeilToInt(currentTime)}";
-            }
-
-            // Restart level when time expires
-           
+            timerText.text = $"Time: {Mathf.CeilToInt(currentTime)}";
         }
+    }
 
-        timerText = GameObject.Find("Timer").GetComponent<TextMeshProUGUI>();
-
+    private void HandleDebugInput()
+    {
         if (Input.GetKey(KeyCode.Escape))
         {
             ReloadLevel();
         }
 
-        if (Input.GetKey (KeyCode.Tilde))
+        if (Input.GetKey(KeyCode.Tilde))
         {
             MainMenu();
         }
@@ -81,21 +105,23 @@ public class GameManager : MonoBehaviour
     public void StopTimer()
     {
         isTimerRunning = false;
+        if (Timer.instance != null)
+        {
+            Timer.instance.HandleTimerStop(currentTime);
+        }
     }
 
     public void ReloadLevel()
     {
-        
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        TA.TimeAlloted -= currentTime;
-        TA.hasTracked = false;
-
+        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+        SceneManager.LoadScene(currentSceneIndex);
+        ResetTimerTracking();
     }
 
-    // Existing scene management functions
     public void MainMenu()
     {
         SceneManager.LoadScene(0);
+        ResetTimerTracking();
     }
 
     public void NextLevel()
@@ -104,9 +130,8 @@ public class GameManager : MonoBehaviour
 
         if (nextBuildIndex < SceneManager.sceneCountInBuildSettings)
         {
-            
             SceneManager.LoadScene(nextBuildIndex);
-            TA.hasTracked = false;
+            ResetTimerTracking();
         }
         else
         {
@@ -117,11 +142,17 @@ public class GameManager : MonoBehaviour
 
     public void Restart()
     {
-        
         string currentSceneName = SceneManager.GetActiveScene().name;
         SceneManager.LoadScene(currentSceneName);
-        TA.TimeAlloted -= currentTime;
-        TA.hasTracked = false;
+        ResetTimerTracking();
+    }
+
+    private void ResetTimerTracking()
+    {
+        if (Timer.instance != null)
+        {
+            Timer.instance.ResetTimeTracking(currentTime);
+        }
     }
 
     public void Level(int levelBuildIndex)
@@ -132,13 +163,13 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Invalid level build index: " + levelBuildIndex);
+            Debug.LogError($"Invalid level build index: {levelBuildIndex}");
         }
     }
 
     public void Credits()
     {
-        SceneManager.LoadScene("Credits",LoadSceneMode.Single);
+        SceneManager.LoadScene("Credits", LoadSceneMode.Single);
     }
 
     public void EndGame()

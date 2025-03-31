@@ -2,86 +2,99 @@ using UnityEngine;
 
 public class PlayerCamera : MonoBehaviour
 {
-    GameObject player;
-    private Camera cam;
+    [Header("References")]
+    [SerializeField] private Transform playerTransform;
+    [SerializeField] private Camera cam;
+
+    [Header("Follow Settings")]
+    [SerializeField][Range(0, 1)] private float followStrength = 0.3f;
+    [SerializeField] private float smoothTime = 0.3f;
+    [SerializeField][Range(0, 0.5f)] private float edgeThreshold = 0.1f;
+
+    [Header("Margins")]
+    [SerializeField][Range(0, 0.5f)] private float horizontalMargin = 0.2f;
+    [SerializeField][Range(0, 0.5f)] private float verticalMargin = 0.2f;
+
+    [Header("Zoom Settings")]
+    [SerializeField] private float zoomSpeed = 2f;
+    [SerializeField] private float maxZoom = 7.5f;
+    [SerializeField] private float minZoom = 2.5f;
+
     private Vector3 velocity = Vector3.zero;
+    private float targetZoom;
 
-    [Range(0, 1)] public float followStrength = 0.3f;
-    public float smoothTime = 0.3f;
-    [Range(0, 0.5f)] public float edgeThreshold = 0.1f;
-
-    [Range(0, 0.5f)] public float horizontalMargin = 0.2f;
-    [Range(0, 0.5f)] public float verticalMargin = 0.2f;
-    public float zoomLevel;
-    public float maxZoom = 7.5f;
-    public float minZoom = 2.5f;
-
-    void Start()
+    private void Start()
     {
-        player = GameObject.FindWithTag("Player");
-        cam = GetComponent<Camera>();
+        if (playerTransform == null)
+        {
+            playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
+            if (playerTransform == null) Debug.LogError("PlayerCamera: Player transform not found!");
+        }
+
+        if (cam == null) cam = GetComponent<Camera>();
+        targetZoom = cam.orthographicSize;
     }
 
-    void Update()
+    private void LateUpdate()
     {
-        Vector3 desiredCamPos;
+        if (playerTransform == null || cam == null) return;
 
-        
-        if (Input.mouseScrollDelta.y < 0 && cam.orthographicSize <= maxZoom)
-        {
-            cam.orthographicSize += 0.5f;
+        HandleZoomInput();
+        UpdateCameraPosition();
+    }
 
-            
-        }
+    private void HandleZoomInput()
+    {
+        float scrollInput = -Input.GetAxis("Mouse ScrollWheel");
+        targetZoom += scrollInput * zoomSpeed;
+        targetZoom = Mathf.Clamp(targetZoom, minZoom, maxZoom);
+        cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, targetZoom, Time.deltaTime * zoomSpeed);
+    }
 
-        else if (Input.mouseScrollDelta.y > 0 && cam.orthographicSize >= minZoom)
-        {
-            cam.orthographicSize -= 0.5f;
-        }
-        
-        
-        //if (Input.GetMouseButton(0))
-        //{
-        //    // Freeze camera position when mouse is held down
-        //    desiredCamPos = transform.position;
-        //    velocity = Vector3.zero; // Reset velocity for immediate stop
-        //}
-        
-        
-            // Normal camera behavior when mouse is not held down
-            Vector3 playerPos = player.transform.position;
-            Vector3 mouseViewportPos = cam.ScreenToViewportPoint(Input.mousePosition);
+    private void UpdateCameraPosition()
+    {
+        Vector3 mouseViewportPos = cam.ScreenToViewportPoint(Input.mousePosition);
+        Vector3 playerPosition = playerTransform.position;
 
-            float horizontalInfluence = CalculateEdgeInfluence(mouseViewportPos.x);
-            float verticalInfluence = CalculateEdgeInfluence(mouseViewportPos.y);
-
-            float camHeight = 2f * cam.orthographicSize;
-            float camWidth = camHeight * cam.aspect;
-
-            Vector3 targetOffset = new Vector3(
-                horizontalInfluence * (0.5f - horizontalMargin) * camWidth,
-                verticalInfluence * (0.5f - verticalMargin) * camHeight,
-                0
-            ) * followStrength;
-
-            desiredCamPos = playerPos + targetOffset;
-            desiredCamPos.z = transform.position.z;
-        
+        Vector3 targetOffset = CalculateCameraOffset(mouseViewportPos, playerPosition);
+        Vector3 desiredPosition = playerPosition + targetOffset;
+        desiredPosition.z = transform.position.z;
 
         transform.position = Vector3.SmoothDamp(
             transform.position,
-            desiredCamPos,
+            desiredPosition,
             ref velocity,
-            smoothTime
+            smoothTime * (1 - followStrength)
         );
+    }
+
+    private Vector3 CalculateCameraOffset(Vector3 mouseViewportPos, Vector3 playerPosition)
+    {
+        float horizontalInfluence = CalculateEdgeInfluence(mouseViewportPos.x);
+        float verticalInfluence = CalculateEdgeInfluence(mouseViewportPos.y);
+
+        float camHeight = 2f * cam.orthographicSize;
+        float camWidth = camHeight * cam.aspect;
+
+        return new Vector3(
+            horizontalInfluence * (0.5f - horizontalMargin) * camWidth,
+            verticalInfluence * (0.5f - verticalMargin) * camHeight,
+            0
+        ) * followStrength;
     }
 
     private float CalculateEdgeInfluence(float axisPosition)
     {
         if (axisPosition < edgeThreshold)
-            return (axisPosition / edgeThreshold) - 1;
+        {
+            return Mathf.SmoothStep(-1f, 0f, axisPosition / edgeThreshold);
+        }
+
         if (axisPosition > 1 - edgeThreshold)
-            return (axisPosition - (1 - edgeThreshold)) / edgeThreshold;
+        {
+            return Mathf.SmoothStep(0f, 1f, (axisPosition - (1 - edgeThreshold)) / edgeThreshold);
+        }
+
         return 0;
     }
 }
