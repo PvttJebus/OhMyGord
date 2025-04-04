@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
+    //This is the file I feel like is working smart not hard. 
+    //This was the original enemy file that housed all the states in one, so I went in and adjusted it so I could use it as a reference file for each of the states.
     [SerializeField] private float moveForce = 5f;
     [SerializeField] private float moveSpeed = 2f;
     [SerializeField] private int gapCheckFrames = 20;
@@ -20,9 +22,10 @@ public class Enemy : MonoBehaviour
         animator = GetComponent<Animator>();
         body = GetComponent<Rigidbody2D>();
         originalScale = transform.localScale;
-        animator.Play("EnemyWalk");
+        
     }
 
+    //After the changes I'm certain this isn't needed, but I kept it just in case.
     private void Update()
     {
         HandleMouseInput();
@@ -34,32 +37,26 @@ public class Enemy : MonoBehaviour
         if (Input.GetMouseButtonDown(0) && isMouseOver)
         {
             isDragging = true;
-            body.velocity = Vector2.zero; // Stop movement immediately
-            // Fire trigger in animator to switch to ControlState
+            body.velocity = Vector2.zero; 
             animator.SetTrigger("toControl");
         }
 
-        // If we are in "control" state, you'll move the enemy in ControlState.cs
-        // but we can still detect the mouse release here:
-        if (Input.GetMouseButtonUp(0) && isDragging)
+        
+        if (Input.GetMouseButtonUp(0) && isDragging == true)
         {
             isDragging = false;
-            // Probably we want to set "toFalling" so the enemy transitions to FallingState
-            // or maybe we check if it’s over ground vs. falling, etc.
+            
             animator.SetTrigger("toFalling");
         }
     }
 
-    /// <summary>
-    /// Called by PatrolState to handle walking. 
-    /// (Originally from your Enemy.HandleMovement())
-    /// </summary>
+    //I lifted everything that was relevant to general patrol and moved it into this function. 
     public void PatrolMovement()
     {
-        // 1) Raycast in front to detect walls
+        
         bool hitWall = CheckFrontWall();
 
-        // 2) Raycast downward to detect ground
+       
         bool edgeCheck = Physics2D.Raycast(body.position + new Vector2(0.7f * moveDir, 0),
                                            Vector2.down, 2f);
 
@@ -68,12 +65,12 @@ public class Enemy : MonoBehaviour
 
         bool shouldTurn = false;
 
-        // If we detect a wall and no cooldown left
+        
         if (hitWall && turnCooldown <= 0)
         {
             shouldTurn = true;
         }
-        // If no ground under us, increment edgeMiss
+        
         else if (!edgeCheck)
         {
             edgeMissCount++;
@@ -82,7 +79,7 @@ public class Enemy : MonoBehaviour
                 shouldTurn = true;
             }
         }
-        // Otherwise we reset edgeMiss if we see ground
+        
         else
         {
             edgeMissCount = 0;
@@ -97,18 +94,19 @@ public class Enemy : MonoBehaviour
             turnCooldown--;
         }
 
-        // Apply horizontal force, but clamp velocity
+        
         if (Mathf.Abs(body.velocity.x) < moveSpeed)
         {
             body.AddForce(new Vector2(moveForce * moveDir, 0));
         }
     }
 
+    //Same here fut for following
     public bool IsFalling()
     {
         float rayLength = 0.2f;
         var hit = Physics2D.Raycast(body.position, Vector2.down, rayLength);
-        return (hit.collider == null);  // no ground => falling
+        return (hit.collider == null);  
     }
 
     private bool CheckFrontWall()
@@ -123,15 +121,15 @@ public class Enemy : MonoBehaviour
 
     private void TurnAround()
     {
-        // Zero out horizontal velocity
+        
         body.velocity = new Vector2(0, body.velocity.y);
 
-        // Flip direction
+        
         moveDir *= -1;
         turnCooldown = 20;
         edgeMissCount = 0;
 
-        // Flip sprite
+        
         transform.localScale = new Vector3(originalScale.x * moveDir, originalScale.y, originalScale.z);
     }
 

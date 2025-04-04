@@ -187,6 +187,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2440981655913938079, guid: 15980ada160d9a541997ca0e254809d8, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2440981655913938079, guid: 15980ada160d9a541997ca0e254809d8, type: 3}
       propertyPath: moveForce
       value: 50
       objectReference: {fileID: 0}
@@ -42771,6 +42775,17 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
+--- !u!114 &1189079449 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6747865470849633087, guid: cd89170469e2b4b4eba43016694f5f8c, type: 3}
+  m_PrefabInstance: {fileID: 1280351955}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1253382620
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -48027,6 +48042,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: GameManager
       objectReference: {fileID: 0}
+    - target: {fileID: 7146164341806455010, guid: 52a39e79974f1fc45807565b45c3e361, type: 3}
+      propertyPath: timerText
+      value: 
+      objectReference: {fileID: 1189079449}
     - target: {fileID: 7146164341806455010, guid: 52a39e79974f1fc45807565b45c3e361, type: 3}
       propertyPath: levelDuration
       value: 0

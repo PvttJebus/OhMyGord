@@ -44,7 +44,7 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        TA = FindAnyObjectByType<TimeAllotted>().GetComponent<TimeAllotted>();
+        //TA = FindAnyObjectByType<TimeAllotted>().GetComponent<TimeAllotted>();
         if (isTimerRunning)
         {
             currentTime += Time.deltaTime;

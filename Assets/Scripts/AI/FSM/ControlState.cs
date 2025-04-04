@@ -4,37 +4,37 @@ using UnityEngine;
 
 public class ControlState : StateMachineBehaviour
 {
-    // OnStateEnter: do anything you need right as we switch to “Control” 
+    //I thought I could set the variable here and use the on-state enter to forget it, but sadly this didn't seem to work
+    //public Enemy enemy;
+
     public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        // Possibly set an “EnemyDragged” animation or freeze velocity
+        
         Enemy enemy = animator.GetComponent<Enemy>();
         enemy.body.velocity = Vector2.zero;
-        // If you have a “grab” animation, you could do: animator.Play("EnemyGrab");
+        
     }
 
-    // Called every frame while in "Control" state
+    
     public override void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
+     //so my simple solution is to just have it confirm the animator every update. 
         Enemy enemy = animator.GetComponent<Enemy>();
-
-        // If still dragging, follow the mouse
-        if (enemy.isDragging)
+        if (enemy.isDragging == true)
         {
             Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             enemy.body.MovePosition(mousePos);
         }
-        else
+        else if (enemy.isDragging == false)
         {
-            // If we are no longer dragging, presumably the user let go => transition
-            // We'll set "toFalling" so it can drop
+            
             animator.SetTrigger("toFalling");
         }
     }
 
-    // OnStateExit: optionally do cleanup
+  
     public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        // e.g. reset triggers or revert any special state
+        
     }
 }
