@@ -202,6 +202,10 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: ca7c1b6829f59aa4f90aa56cb475b054, type: 2}
+    - target: {fileID: 2716779354218624804, guid: 15980ada160d9a541997ca0e254809d8, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3632927902887159145, guid: 15980ada160d9a541997ca0e254809d8, type: 3}
       propertyPath: m_Interpolate
       value: 1

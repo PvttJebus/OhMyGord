@@ -4,33 +4,35 @@ using UnityEngine;
 
 public class FallingState : StateMachineBehaviour
 {
-    // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
-    //override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    
-    //}
+    // Called once when we enter the "Falling" state
+    public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        Enemy enemy = animator.GetComponent<Enemy>();
+        // Possibly set velocity or a "fall" animation
+        // e.g. animator.Play("EnemyFall");
+    }
 
-    // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
-    //override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    
-    //}
+    public override void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        Enemy enemy = animator.GetComponent<Enemy>();
 
-    // OnStateExit is called when a transition ends and the state machine finishes evaluating this state
-    //override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    
-    //}
+        // If we landed back on ground, go to Patrol
+        if (!enemy.IsFalling())
+        {
+            animator.SetTrigger("toPatrol");
+        }
 
-    // OnStateMove is called right after Animator.OnAnimatorMove()
-    //override public void OnStateMove(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    // Implement code that processes and affects root motion
-    //}
+        // If you want a condition to destroy the enemy (like falling out of bounds),
+        // you can detect that here. For example:
+        // if (enemy.transform.position.y < -10f)
+        // {
+        //     // transition to a "Dead" or "Destroy" state, or just Destroy(enemy.gameObject)
+        // }
+    }
 
-    // OnStateIK is called right after Animator.OnAnimatorIK()
-    //override public void OnStateIK(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    // Implement code that sets up animation IK (inverse kinematics)
-    //}
+    public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        // Cleanup or reset triggers if needed
+    }
 }
+

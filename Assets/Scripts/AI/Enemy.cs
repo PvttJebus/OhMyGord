@@ -7,13 +7,13 @@ public class Enemy : MonoBehaviour
     [SerializeField] private int gapCheckFrames = 20;
 
     private int moveDir = -1;
-    private Rigidbody2D body;
+    public Rigidbody2D body;
     private int turnCooldown = 0;
     private Vector3 originalScale;
     private int edgeMissCount = 0;
-    private Animator animator;
+    public Animator animator;
     private bool isMouseOver;
-    private bool isDragging;
+    public bool isDragging;
 
     private void Start()
     {
@@ -27,55 +27,54 @@ public class Enemy : MonoBehaviour
     {
         HandleMouseInput();
 
-        if (!isDragging)
-        {
-            HandleMovement();
-        }
     }
 
     private void HandleMouseInput()
     {
-        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
         if (Input.GetMouseButtonDown(0) && isMouseOver)
         {
             isDragging = true;
-            body.velocity = Vector2.zero; // Stop current movement
+            body.velocity = Vector2.zero; // Stop movement immediately
+            // Fire trigger in animator to switch to ControlState
+            animator.SetTrigger("toControl");
         }
 
-        if (isDragging)
+        // If we are in "control" state, you'll move the enemy in ControlState.cs
+        // but we can still detect the mouse release here:
+        if (Input.GetMouseButtonUp(0) && isDragging)
         {
-            if (Input.GetMouseButton(0))
-            {
-                // Move using Rigidbody to maintain physics interaction
-                body.MovePosition(mousePos);
-            }
-            else
-            {
-                isDragging = false;
-            }
+            isDragging = false;
+            // Probably we want to set "toFalling" so the enemy transitions to FallingState
+            // or maybe we check if it’s over ground vs. falling, etc.
+            animator.SetTrigger("toFalling");
         }
     }
 
-    private void HandleMovement()
+    /// <summary>
+    /// Called by PatrolState to handle walking. 
+    /// (Originally from your Enemy.HandleMovement())
+    /// </summary>
+    public void PatrolMovement()
     {
-        Vector2 direction = new Vector2(moveDir, 0);
-        RaycastHit2D edgeCheck = Physics2D.Raycast(
-            body.position + new Vector2(0.7f * moveDir, 0),
-            Vector2.down,
-            2f
-        );
-
-        Debug.DrawRay(body.position + new Vector2(1.2f * moveDir, 0), Vector2.down * 2, Color.red);
-
+        // 1) Raycast in front to detect walls
         bool hitWall = CheckFrontWall();
+
+        // 2) Raycast downward to detect ground
+        bool edgeCheck = Physics2D.Raycast(body.position + new Vector2(0.7f * moveDir, 0),
+                                           Vector2.down, 2f);
+
+        Debug.DrawRay(body.position + new Vector2(1.2f * moveDir, 0),
+                      Vector2.down * 2, Color.red);
+
         bool shouldTurn = false;
 
+        // If we detect a wall and no cooldown left
         if (hitWall && turnCooldown <= 0)
         {
             shouldTurn = true;
         }
-        else if (edgeCheck.collider == null)
+        // If no ground under us, increment edgeMiss
+        else if (!edgeCheck)
         {
             edgeMissCount++;
             if (edgeMissCount >= gapCheckFrames && turnCooldown <= 0)
@@ -83,6 +82,7 @@ public class Enemy : MonoBehaviour
                 shouldTurn = true;
             }
         }
+        // Otherwise we reset edgeMiss if we see ground
         else
         {
             edgeMissCount = 0;
@@ -97,10 +97,18 @@ public class Enemy : MonoBehaviour
             turnCooldown--;
         }
 
+        // Apply horizontal force, but clamp velocity
         if (Mathf.Abs(body.velocity.x) < moveSpeed)
         {
             body.AddForce(new Vector2(moveForce * moveDir, 0));
         }
+    }
+
+    public bool IsFalling()
+    {
+        float rayLength = 0.2f;
+        var hit = Physics2D.Raycast(body.position, Vector2.down, rayLength);
+        return (hit.collider == null);  // no ground => falling
     }
 
     private bool CheckFrontWall()
@@ -115,21 +123,18 @@ public class Enemy : MonoBehaviour
 
     private void TurnAround()
     {
+        // Zero out horizontal velocity
         body.velocity = new Vector2(0, body.velocity.y);
+
+        // Flip direction
         moveDir *= -1;
         turnCooldown = 20;
         edgeMissCount = 0;
 
+        // Flip sprite
         transform.localScale = new Vector3(originalScale.x * moveDir, originalScale.y, originalScale.z);
     }
 
-    private void OnMouseEnter()
-    {
-        isMouseOver = true;
-    }
-
-    private void OnMouseExit()
-    {
-        isMouseOver = false;
-    }
+    private void OnMouseEnter() { isMouseOver = true; }
+    private void OnMouseExit() { isMouseOver = false; }
 }

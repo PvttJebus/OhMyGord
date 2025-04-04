@@ -4,33 +4,37 @@ using UnityEngine;
 
 public class ControlState : StateMachineBehaviour
 {
-    // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
-    //override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    
-    //}
+    // OnStateEnter: do anything you need right as we switch to “Control” 
+    public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        // Possibly set an “EnemyDragged” animation or freeze velocity
+        Enemy enemy = animator.GetComponent<Enemy>();
+        enemy.body.velocity = Vector2.zero;
+        // If you have a “grab” animation, you could do: animator.Play("EnemyGrab");
+    }
 
-    // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
-    //override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    
-    //}
+    // Called every frame while in "Control" state
+    public override void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        Enemy enemy = animator.GetComponent<Enemy>();
 
-    // OnStateExit is called when a transition ends and the state machine finishes evaluating this state
-    //override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    
-    //}
+        // If still dragging, follow the mouse
+        if (enemy.isDragging)
+        {
+            Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            enemy.body.MovePosition(mousePos);
+        }
+        else
+        {
+            // If we are no longer dragging, presumably the user let go => transition
+            // We'll set "toFalling" so it can drop
+            animator.SetTrigger("toFalling");
+        }
+    }
 
-    // OnStateMove is called right after Animator.OnAnimatorMove()
-    //override public void OnStateMove(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    // Implement code that processes and affects root motion
-    //}
-
-    // OnStateIK is called right after Animator.OnAnimatorIK()
-    //override public void OnStateIK(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    // Implement code that sets up animation IK (inverse kinematics)
-    //}
+    // OnStateExit: optionally do cleanup
+    public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        // e.g. reset triggers or revert any special state
+    }
 }
