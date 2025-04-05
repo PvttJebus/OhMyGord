@@ -29273,6 +29273,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1775813203239921429, guid: 487f3db12fa7b64479927e0af9c06148, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3339860505054948334, guid: 487f3db12fa7b64479927e0af9c06148, type: 3}
       propertyPath: m_Name
       value: Death Box
