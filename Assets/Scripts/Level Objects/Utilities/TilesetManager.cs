@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class TilesetManager : MonoBehaviour
 {
-    [SerializeField] TileBase[] tilePalette;
+    [SerializeField] RuleTile[] tilePalette;
     [SerializeField] GameObject buttonPrefab;
     [SerializeField] Transform buttonContainer;
     [SerializeField] Sprite eraseSprite;
@@ -17,11 +17,10 @@ public class TilesetManager : MonoBehaviour
 
     void CreateTileButtons()
     {
-        foreach (TileBase tile in tilePalette)
+        foreach (RuleTile tile in tilePalette)
         {
             GameObject button = Instantiate(buttonPrefab, buttonContainer);
-            if (tile is Tile baseTile)
-                button.GetComponent<Image>().sprite = baseTile.sprite;
+            button.GetComponent<Image>().sprite = tile.m_DefaultSprite;
 
             button.GetComponent<Button>().onClick.AddListener(() =>
             {
@@ -39,4 +38,5 @@ public class TilesetManager : MonoBehaviour
             LevelEditor.Instance.SetEraserState();
         });
     }
+    public RuleTile[] TilePalette => tilePalette;
 }
