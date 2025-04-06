@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Player : MonoBehaviour
+public class Player : LevelObject
 {
     Animator animator;
     SpriteRenderer spriteRenderer;
@@ -103,5 +103,9 @@ public class Player : MonoBehaviour
     {
         var hit = Physics2D.Raycast(body.position + Vector2.down * 0.61f, Vector2.down, 0.001f);
         return hit.collider != null;
+    }
+
+    public override void Modify()
+    {
     }
 }
