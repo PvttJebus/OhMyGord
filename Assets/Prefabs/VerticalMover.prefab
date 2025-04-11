@@ -114,7 +114,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 5
+  m_Constraints: 4
 --- !u!61 &3507851809152164266
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -174,13 +174,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   editing: 0
   originalPrefabInstanceID: 0
+  _sizeMin: {x: 0.25, y: 0.25}
+  _sizeMax: {x: 4, y: 4}
   group: {fileID: 0}
-  moveSpeed: 15000
+  initialScale: 1
+  moveSpeed: 9000
   moveSpeedReturn: 5000
-  maxSpeed: 70000
+  maxSpeed: 30000
+  throwForce: 500
   returnToStart: 1
+  moveDirection: 1
   closeEnough: 0.1
-  moverAudio: {fileID: -6904426423531315907}
+  moverAudio: {fileID: 0}
 --- !u!82 &-6904426423531315907
 AudioSource:
   m_ObjectHideFlags: 0

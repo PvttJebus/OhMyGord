@@ -4,34 +4,56 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance;
+    public static GameManager Instance { get; private set; }
 
     [Header("Timer Settings")]
-    public float levelDuration = 0f;
+    [Tooltip("Initial time for the timer. Used as countdown start if countdownMode is true, or zero if false.")]
+    public float initialTime = 0f;
+
+    [Tooltip("If true, timer counts down from initialTime to zero. If false, counts up from zero.")]
+    public bool countdownMode = false;
+
     public TMP_Text timerText;
 
     [Header("Game State")]
     public float currentTime;
     public bool isTimerRunning;
 
-    private void Awake()
+    private enum SceneIndex
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        MainMenu = 0,
+        // Add other named scenes here as needed, e.g.,
+        // Level1 = 1,
+        // Level2 = 2,
+        // Credits = 3
     }
 
-    private void OnDestroy()
+    private const SceneIndex MainMenuScene = SceneIndex.MainMenu;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("[GameManager] Duplicate instance detected, destroying this instance.");
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
+
+    // OnDestroy intentionally left empty; cleanup handled in OnDisable
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -42,19 +64,25 @@ public class GameManager : MonoBehaviour
     private void InitializeTimerUI()
     {
         GameObject timerObject = GameObject.Find("Timer");
+        Debug.Log($"[GameManager] InitializeTimerUI: Timer object found: {timerObject != null}");
         if (timerObject != null)
         {
             timerText = timerObject.GetComponent<TMP_Text>();
+            Debug.Log($"[GameManager] InitializeTimerUI: timerText assigned: {timerText != null}");
             if (timerText == null)
             {
                 Debug.LogWarning("Timer object missing TMP_Text component");
             }
         }
+        else
+        {
+            Debug.LogWarning("[GameManager] InitializeTimerUI: Timer GameObject not found");
+        }
     }
 
     private void ManageTimerState(Scene scene)
     {
-        bool isLevelScene = scene.buildIndex > 0; // Assuming main menu is index 0
+        bool isLevelScene = scene.buildIndex > (int)MainMenuScene;
         if (isLevelScene)
         {
             StartTimer();
@@ -75,7 +103,22 @@ public class GameManager : MonoBehaviour
     {
         if (!isTimerRunning) return;
 
-        currentTime += Time.deltaTime;
+        if (countdownMode)
+        {
+            currentTime -= Time.deltaTime;
+            if (currentTime <= 0f)
+            {
+                currentTime = 0f;
+                isTimerRunning = false;
+                Debug.Log("[GameManager] Timer completed (countdown reached zero)");
+                // TODO: Invoke timer complete event/callback here
+            }
+        }
+        else
+        {
+            currentTime += Time.deltaTime;
+            // Optionally, add a max time limit and completion logic here
+        }
 
         if (timerText != null)
         {
@@ -98,8 +141,9 @@ public class GameManager : MonoBehaviour
 
     public void StartTimer()
     {
-        currentTime = levelDuration;
+        currentTime = countdownMode ? initialTime : 0f;
         isTimerRunning = true;
+        Debug.Log($"[GameManager] StartTimer called. Starting at time: {currentTime}");
     }
 
     public void StopTimer()
@@ -109,6 +153,11 @@ public class GameManager : MonoBehaviour
         {
             Timer.instance.HandleTimerStop(currentTime);
         }
+        else
+        {
+            Debug.LogWarning("[GameManager] StopTimer: Timer.instance is null");
+        }
+        Debug.Log($"[GameManager] StopTimer called. Final time: {currentTime}");
     }
 
     public void ReloadLevel()
@@ -120,7 +169,7 @@ public class GameManager : MonoBehaviour
 
     public void MainMenu()
     {
-        SceneManager.LoadScene(0);
+        SceneManager.LoadScene((int)MainMenuScene);
         ResetTimerTracking();
     }
 
@@ -152,6 +201,10 @@ public class GameManager : MonoBehaviour
         if (Timer.instance != null)
         {
             Timer.instance.ResetTimeTracking(currentTime);
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager] ResetTimerTracking: Timer.instance is null");
         }
     }
 

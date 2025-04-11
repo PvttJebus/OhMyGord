@@ -56,7 +56,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 2100000, guid: 217ef3a5c0ef3b2499ce24feea25dc21, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -173,6 +173,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   editing: 0
+  originalPrefabInstanceID: 0
+  _sizeMin: {x: 0.25, y: 0.25}
+  _sizeMax: {x: 4, y: 4}
   group: {fileID: 0}
   _rotationSpeed: 9000
   _maxSpeed: 10000
